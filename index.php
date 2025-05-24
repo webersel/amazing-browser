@@ -179,58 +179,6 @@ unset($genre);
         body.neon .genre-btn:hover { background: #444; }
         body.neon .game-card { background: #222; }
         body.custom { background-size: cover; background-position: center; }
-        /* Logo animation */
-        #logo-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            transition: opacity 1s ease;
-        }
-        #logo-container.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-        #logo {
-            width: 200px;
-            height: 200px;
-            filter: drop-shadow(0 0 20px #00f) drop-shadow(0 0 10px #00f);
-            animation: glow 2s infinite alternate;
-        }
-        @keyframes glow {
-            from { filter: drop-shadow(0 0 20px #00f) drop-shadow(0 0 10px #00f); }
-            to { filter: drop-shadow(0 0 40px #00f) drop-shadow(0 0 20px #00f); }
-        }
-        .star {
-            position: absolute;
-            width: 5px;
-            height: 5px;
-            background: #fff;
-            border-radius: 50%;
-            animation: float 5s infinite;
-        }
-        @keyframes float {
-            0% { transform: translateY(0); opacity: 1; }
-            100% { transform: translateY(-100vh); opacity: 0; }
-        }
-        #logo-header {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            width: 50px;
-            height: 50px;
-            cursor: pointer;
-            z-index: 999;
-            display: none;
-            transition: all 0.5s ease;
-        }
-        #logo-header.visible { display: block; }
         /* Layout */
         #sidebar {
             width: 60px;
@@ -241,7 +189,7 @@ unset($genre);
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding-top: 70px;
+            padding-top: 20px;
             transition: width 0.3s;
         }
         #sidebar.wide { width: 100px; }
@@ -262,12 +210,6 @@ unset($genre);
             height: 100vh;
             overflow-y: auto;
             transition: margin-left 0.3s;
-            opacity: 0;
-            pointer-events: none;
-        }
-        main.visible {
-            opacity: 1;
-            pointer-events: auto;
         }
         main.wide { margin-left: 100px; }
         main.narrow { margin-left: 40px; }
@@ -371,7 +313,7 @@ unset($genre);
             margin-bottom: 0.5rem;
             font-weight: bold;
         }
-        .settings-group select, .settings-group input[type="file"], .settings-group input[type="checkbox"] {
+        .settings-group select, .settings-group input[type="file"] {
             width: 100%;
             padding: 0.5rem;
             border-radius: 5px;
@@ -393,10 +335,6 @@ unset($genre);
     </style>
 </head>
 <body class="neon">
-    <div id="logo-container">
-        <img id="logo" src="/logo.png" alt="Stellar Logo" onerror="this.src='https://via.placeholder.com/200?text=Stellar+Logo'; console.log('Logo failed, using placeholder');">
-    </div>
-    <img id="logo-header" src="/logo.png" alt="Stellar Logo" onerror="this.src='https://via.placeholder.com/50?text=Stellar'; console.log('Header logo failed, using placeholder');">
     <div id="sidebar">
         <nav>
             <a href="?page=home" class="<?= $page === 'home' ? 'active' : '' ?>"><i class="fas fa-home"></i> Home</a>
@@ -470,82 +408,15 @@ unset($genre);
                     <option value="large">Large Cards (3 columns)</option>
                 </select>
             </div>
-            <div class="settings-group">
-                <label>Enable Logo Animation</label>
-                <input type="checkbox" id="logo-animation" checked>
-            </div>
             <button id="reset-settings">Reset to Defaults</button>
             <button id="close-settings">Close</button>
         </div>
     </div>
     <script>
-        // Logo animation
-        const logoContainer = document.getElementById('logo-container');
-        const logo = document.getElementById('logo');
-        const logoHeader = document.getElementById('logo-header');
         const body = document.body;
         const main = document.querySelector('main');
-        let logoAnimationEnabled = localStorage.getItem('logoAnimation') !== 'false';
-
-        function startLogoAnimation() {
-            return new Promise((resolve) => {
-                if (!logoAnimationEnabled || !logo) {
-                    console.log('Logo animation disabled or logo not found, skipping');
-                    logoContainer.classList.add('hidden');
-                    logoHeader.classList.add('visible');
-                    resolve();
-                    return;
-                }
-                // Add floating stars
-                for (let i = 0; i < 20; i++) {
-                    const star = document.createElement('div');
-                    star.className = 'star';
-                    star.style.left = `${Math.random() * 100}%`;
-                    star.style.animationDelay = `${Math.random() * 5}s`;
-                    logoContainer.appendChild(star);
-                }
-                console.log('Starting logo animation');
-                setTimeout(() => {
-                    logoContainer.style.transform = 'translateX(-50vw)';
-                    setTimeout(() => {
-                        logoContainer.classList.add('hidden');
-                        logoHeader.classList.add('visible');
-                        logoHeader.style.width = '50px';
-                        logoHeader.style.height = '50px';
-                        logoHeader.style.position = 'fixed';
-                        logoHeader.style.top = '10px';
-                        logoHeader.style.left = '10px';
-                        console.log('Logo animation completed');
-                        resolve();
-                    }, 1000); // Match the transition duration
-                }, 2000); // Initial display time
-            });
-        }
-
-        // UI initialization after animation
-        function initializeUI() {
-            console.log('Initializing UI');
-            main.classList.add('visible');
-            applySettings();
-            setupEventListeners();
-        }
-
-        // Start animation on load and proceed to UI
-        window.addEventListener('load', () => {
-            console.log('Window loaded');
-            startLogoAnimation().then(() => {
-                initializeUI();
-            }).catch(err => {
-                console.error('Animation failed, loading UI directly:', err);
-                initializeUI();
-            });
-        });
-
-        logoHeader.addEventListener('click', () => {
-            window.location.href = '?page=home';
-        });
-
-        // Settings
+        const sidebar = document.getElementById('sidebar');
+        const gameGrid = document.getElementById('game-grid');
         const settingsBtn = document.getElementById('settings-btn');
         const settingsModal = document.getElementById('settings-modal');
         const closeSettings = document.getElementById('close-settings');
@@ -554,10 +425,7 @@ unset($genre);
         const fontSize = document.getElementById('font-size');
         const sidebarWidth = document.getElementById('sidebar-width');
         const gridSize = document.getElementById('grid-size');
-        const logoAnimation = document.getElementById('logo-animation');
         const resetSettings = document.getElementById('reset-settings');
-        const sidebar = document.getElementById('sidebar');
-        const gameGrid = document.getElementById('game-grid');
 
         function applySettings() {
             const theme = localStorage.getItem('theme') || 'neon';
@@ -565,7 +433,6 @@ unset($genre);
             const selectedFontSize = localStorage.getItem('fontSize') || 'medium';
             const selectedSidebarWidth = localStorage.getItem('sidebarWidth') || 'medium';
             const selectedGridSize = localStorage.getItem('gridSize') || 'medium';
-            logoAnimationEnabled = localStorage.getItem('logoAnimation') !== 'false';
 
             body.className = theme;
             if (theme === 'custom' && customWallpaper) {
@@ -573,13 +440,12 @@ unset($genre);
             }
             body.style.fontSize = selectedFontSize === 'small' ? '0.9rem' : selectedFontSize === 'large' ? '1.1rem' : '1rem';
             sidebar.className = `sidebar ${selectedSidebarWidth}`;
-            main.className = `main ${selectedSidebarWidth} ${main.classList.contains('visible') ? 'visible' : ''}`;
+            main.className = `main ${selectedSidebarWidth}`;
             gameGrid.className = `game-grid ${selectedGridSize}`;
             themeSelect.value = theme;
             fontSize.value = selectedFontSize;
             sidebarWidth.value = selectedSidebarWidth;
             gridSize.value = selectedGridSize;
-            logoAnimation.checked = logoAnimationEnabled;
         }
 
         function setupEventListeners() {
@@ -632,11 +498,6 @@ unset($genre);
             gridSize.addEventListener('change', () => {
                 localStorage.setItem('gridSize', gridSize.value);
                 applySettings();
-            });
-
-            logoAnimation.addEventListener('change', () => {
-                localStorage.setItem('logoAnimation', logoAnimation.checked);
-                logoAnimationEnabled = logoAnimation.checked;
             });
 
             resetSettings.addEventListener('click', () => {
@@ -717,6 +578,10 @@ unset($genre);
                 displayGames(genreButtons[0].dataset.genre);
             }
         }
+
+        // Initialize UI immediately
+        applySettings();
+        setupEventListeners();
     </script>
 </body>
 </html>
