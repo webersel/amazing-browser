@@ -26,9 +26,14 @@ if (isset($_GET['proxy'])) {
         CURLOPT_SSL_VERIFYHOST => 0,
         CURLOPT_TIMEOUT => 30,
         CURLOPT_ENCODING => 'gzip, deflate',
-        CURLOPT_COOKIEFILE => '',
-        CURLOPT_COOKIEJAR => '',
+        CURLOPT_COOKIEFILE => 'cookies.txt',
+        CURLOPT_COOKIEJAR => 'cookies.txt',
         CURLOPT_BINARYTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language: en-US,en;q=0.5',
+            'Connection: keep-alive',
+        ],
     ]);
 
     $response = curl_exec($ch);
@@ -43,11 +48,20 @@ if (isset($_GET['proxy'])) {
     }
 
     $content_type = curl_getinfo($ch, CURLINFO_CONTENT_TYPE) ?: 'text/html';
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
+
+    if ($http_code >= 400) {
+        http_response_code($http_code);
+        header('Content-Type: application/json');
+        echo json_encode(['error' => "HTTP error: $http_code"]);
+        error_log("HTTP error $http_code for $url");
+        exit;
+    }
 
     if (stripos($content_type, 'text/html') !== false) {
         $proxy_base = $_SERVER['PHP_SELF'] . '?proxy=';
-        $ws_proxy = 'ws://localhost:8080'; // Update to Node.js URL for hosting
+        $ws_proxy = 'ws://your-node-app.onrender.com'; // Replace with actual WebSocket URL
         $response = preg_replace(
             '/(href|src|action)=[\'"](?!http|data:)([^\'"]+)[\'"]/i',
             '$1="' . $proxy_base . '$2"',
@@ -72,57 +86,58 @@ $genres = [
         ['title' => 'Slither.io', 'url' => 'https://slither.io/', 'thumb' => 'https://upload.wikimedia.org/wikipedia/en/7/7a/Slither.io_logo.png'],
         ['title' => 'Krunker.io', 'url' => 'https://krunker.io/', 'thumb' => 'https://krunker.io/img/favicon.png'],
         ['title' => 'Shell Shockers', 'url' => 'https://shellshock.io/', 'thumb' => 'https://shellshock.io/favicon.ico'],
-        // Add 62 more (total 65)
+        // Add more (total 65 per genre)
     ],
     'Puzzle' => [
         ['title' => '2048', 'url' => 'https://play2048.co/', 'thumb' => 'https://play2048.co/favicon.ico'],
         ['title' => 'Sudoku', 'url' => 'https://www.websudoku.com/', 'thumb' => 'https://www.websudoku.com/favicon.ico'],
         ['title' => 'Cut the Rope', 'url' => 'https://www.cuttherope.net/', 'thumb' => 'https://www.cuttherope.net/favicon.ico'],
-        // Add 62 more
+        // Add more
     ],
     'Multiplayer' => [
         ['title' => 'Agar.io', 'url' => 'https://agar.io/', 'thumb' => 'https://upload.wikimedia.org/wikipedia/en/3/3a/Agar.io_logo.png'],
         ['title' => 'Diep.io', 'url' => 'https://diep.io/', 'thumb' => 'https://diep.io/favicon.ico'],
         ['title' => 'Skribbl.io', 'url' => 'https://skribbl.io/', 'thumb' => 'https://skribbl.io/favicon.ico'],
-        // Add 62 more
+        // Add more
     ],
     'Strategy' => [
         ['title' => 'Bloons TD 5', 'url' => 'https://bloons-tower-defense-5.com/', 'thumb' => 'https://bloons-tower-defense-5.com/favicon.ico'],
         ['title' => 'Kingdom Rush', 'url' => 'https://www.kingdomrush.com/', 'thumb' => 'https://www.kingdomrush.com/favicon.ico'],
-        // Add 58 more
+        // Add more
     ],
     'Retro' => [
         ['title' => 'Pac-Man', 'url' => 'https://www.pacman1.net/', 'thumb' => 'https://www.pacman1.net/favicon.ico'],
         ['title' => 'Tetris', 'url' => 'https://tetris.com/play-tetris/', 'thumb' => 'https://tetris.com/favicon.ico'],
-        // Add 58 more
+        // Add more
     ],
     'Sports' => [
         ['title' => 'Basketball Stars', 'url' => 'https://basketballstarsunblocked.io/', 'thumb' => 'https://basketballstarsunblocked.io/favicon.ico'],
         ['title' => 'Soccer Physics', 'url' => 'https://soccerphysics.net/', 'thumb' => 'https://soccerphysics.net/favicon.ico'],
         ['title' => 'Retro Bowl', 'url' => 'https://retrobowl.me/', 'thumb' => 'https://retrobowl.me/favicon.ico'],
-        // Add 62 more
+        // Add more
     ],
     'Racing' => [
         ['title' => 'Madalin Stunt Cars 2', 'url' => 'https://madalinstuntcars2.io/', 'thumb' => 'https://madalinstuntcars2.io/favicon.ico'],
         ['title' => 'Drift Hunters', 'url' => 'https://drifthunters.com/', 'thumb' => 'https://drifthunters.com/favicon.ico'],
         ['title' => 'Moto X3M', 'url' => 'https://motox3m.io/', 'thumb' => 'https://motox3m.io/favicon.ico'],
-        // Add 62 more
+        // Add more
     ],
     'Adventure' => [
         ['title' => 'Fireboy and Watergirl', 'url' => 'https://fireboyandwatergirl.io/', 'thumb' => 'https://fireboyandwatergirl.io/favicon.ico'],
         ['title' => 'Run 3', 'url' => 'https://run3.io/', 'thumb' => 'https://run3.io/favicon.ico'],
         ['title' => 'Vex 5', 'url' => 'https://vex5.io/', 'thumb' => 'https://vex5.io/favicon.ico'],
-        // Add 57 more
+        // Add more
     ],
 ];
-// Placeholder for full 500+ games
+
+// Expand to 520 games (8 genres × 65 games each)
 foreach ($genres as &$genre) {
     while (count($genre) < 65) {
         $count = count($genre) + 1;
         $genre[] = [
             'title' => "Game $count",
-            'url' => 'https://example.com/game' . $count,
-            'thumb' => 'https://via.placeholder.com/150'
+            'url' => "https://example.com/game$count",
+            'thumb' => 'https://via.placeholder.com/150?text=Game+' . $count
         ];
     }
 }
@@ -134,14 +149,33 @@ unset($genre);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Amazing Browser</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body, html {
             height: 100%;
-            font-family: Arial, sans-serif;
+            font-family: 'Orbitron', sans-serif;
             display: flex;
+            background: #000;
+            color: #d500f9;
+            position: relative;
+            overflow: hidden;
             transition: all 0.3s;
+        }
+        /* Purple particle background */
+        .star {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            background: #d500f9;
+            border-radius: 50%;
+            animation: float 5s infinite;
+            box-shadow: 0 0 10px #d500f9;
+        }
+        @keyframes float {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-100vh); opacity: 0; }
         }
         /* Theme styles */
         body.dark {
@@ -168,14 +202,14 @@ unset($genre);
         body.light .game-card { background: #e0e0e0; }
         body.neon {
             background: #000;
-            color: #0ff;
+            color: #d500f9;
         }
         body.neon #sidebar { background: #111; }
-        body.neon nav a { color: #0ff; }
+        body.neon nav a { color: #d500f9; }
         body.neon nav a:hover, body.neon nav a.active { background: #333; }
         body.neon #address-bar { background: #222; }
-        body.neon #address-input { color: #0ff; }
-        body.neon .genre-btn { background: #222; color: #0ff; }
+        body.neon #address-input { color: #d500f9; }
+        body.neon .genre-btn { background: #222; color: #d500f9; }
         body.neon .genre-btn:hover { background: #444; }
         body.neon .game-card { background: #222; }
         body.custom { background-size: cover; background-position: center; }
@@ -190,7 +224,9 @@ unset($genre);
             flex-direction: column;
             align-items: center;
             padding-top: 20px;
+            background: #111;
             transition: width 0.3s;
+            z-index: 10;
         }
         #sidebar.wide { width: 100px; }
         #sidebar.narrow { width: 40px; }
@@ -201,8 +237,13 @@ unset($genre);
             font-size: 0.7rem;
             width: 100%;
             text-align: center;
+            text-shadow: 0 0 5px #d500f9;
+            transition: background 0.2s;
         }
-        nav a i { font-size: 1.3rem; margin-bottom: 0.2rem; display: block; }
+        nav a:hover, nav a.active {
+            background: #222;
+        }
+        nav a i { font-size: 1.5rem; margin-bottom: 0.2rem; display: block; }
         main {
             margin-left: 60px;
             flex: 1;
@@ -210,42 +251,50 @@ unset($genre);
             height: 100vh;
             overflow-y: auto;
             transition: margin-left 0.3s;
+            z-index: 5;
         }
         main.wide { margin-left: 100px; }
         main.narrow { margin-left: 40px; }
         #home-section { text-align: center; padding: 2rem 0; }
-        #home-section h1 { font-size: 2rem; }
-        #home-section p { font-size: 1rem; opacity: 0.8; }
+        #home-section h1 { font-size: 2.5rem; text-shadow: 0 0 15px #d500f9; }
+        #home-section p { font-size: 1.2rem; opacity: 0.8; text-shadow: 0 0 5px #d500f9; }
         #browser-section { display: flex; flex-direction: column; gap: 0.5rem; }
         #address-bar {
             display: flex;
             border-radius: 20px;
+            background: #222;
+            box-shadow: 0 0 10px #d500f9;
         }
         #address-input {
             flex: 1;
             padding: 0.5rem;
             border: none;
             background: transparent;
-            font-size: 0.9rem;
+            font-size: 1rem;
             outline: none;
+            color: #d500f9;
+            text-shadow: 0 0 5px #d500f9;
         }
         #go-btn {
-            background: #00ff88;
+            background: #d500f9;
             border: none;
             padding: 0 1rem;
             cursor: pointer;
             color: #000;
             border-radius: 20px;
+            font-weight: bold;
+            box-shadow: 0 0 10px #d500f9;
         }
-        #go-btn:hover { background: #00cc66; }
+        #go-btn:hover { background: #b000d5; }
         #iframe-container {
             height: 90vh;
             border-radius: 5px;
-            background: #fff;
+            background: #111;
+            box-shadow: 0 0 15px #d500f9 inset;
         }
         #iframe-container iframe { width: 100%; height: 100%; border: none; }
-        #loading { display: none; text-align: center; padding: 1rem; color: #00ff88; }
-        #error { display: none; text-align: center; padding: 0.5rem; color: #ff4d4d; }
+        #loading { display: none; text-align: center; padding: 1rem; color: #d500f9; text-shadow: 0 0 5px #d500f9; }
+        #error { display: none; text-align: center; padding: 0.5rem; color: #ff4d4d; text-shadow: 0 0 5px #ff4d4d; }
         #games-section { display: flex; flex-direction: column; gap: 1rem; }
         #genres { display: flex; flex-wrap: wrap; gap: 0.5rem; }
         .genre-btn {
@@ -254,8 +303,13 @@ unset($genre);
             border-radius: 15px;
             cursor: pointer;
             transition: background 0.2s;
+            background: #222;
+            color: #d500f9;
+            box-shadow: 0 0 10px #d500f9;
+            text-shadow: 0 0 5px #d500f9;
         }
-        .genre-btn.active { background: #00ff88; color: #000; }
+        .genre-btn:hover { background: #333; }
+        .genre-btn.active { background: #d500f9; color: #000; text-shadow: none; }
         #game-grid {
             display: grid;
             gap: 0.5rem;
@@ -268,11 +322,14 @@ unset($genre);
             border-radius: 5px;
             cursor: pointer;
             transition: transform 0.2s;
+            background: #222;
+            box-shadow: 0 0 10px #d500f9;
         }
         .game-card:hover { transform: scale(1.05); }
         .game-card img {
             width: 100%;
             object-fit: cover;
+            border-radius: 5px 5px 0 0;
         }
         .game-card.small img { height: 80px; }
         .game-card.medium img { height: 100px; }
@@ -281,6 +338,8 @@ unset($genre);
             padding: 0.5rem;
             text-align: center;
             font-size: 0.8rem;
+            color: #d500f9;
+            text-shadow: 0 0 5px #d500f9;
         }
         /* Settings */
         #settings-modal {
@@ -304,14 +363,16 @@ unset($genre);
             width: 90%;
             max-height: 80vh;
             overflow-y: auto;
-            color: #fff;
+            color: #d500f9;
+            box-shadow: 0 0 20px #d500f9;
         }
-        #settings-content h2 { font-size: 1.5rem; margin-bottom: 1rem; }
+        #settings-content h2 { font-size: 1.5rem; margin-bottom: 1rem; text-shadow: 0 0 10px #d500f9; }
         .settings-group { margin-bottom: 1.5rem; }
         .settings-group label {
             display: block;
             margin-bottom: 0.5rem;
             font-weight: bold;
+            text-shadow: 0 0 5px #d500f9;
         }
         .settings-group select, .settings-group input[type="file"] {
             width: 100%;
@@ -319,19 +380,21 @@ unset($genre);
             border-radius: 5px;
             border: none;
             background: #333;
-            color: #fff;
-            margin-top: 0.3rem;
+            color: #d500f9;
+            box-shadow: 0 0 5px #d500f9 inset;
         }
         #settings-content button {
-            background: #00ff88;
+            background: #d500f9;
             border: none;
             padding: 0.5rem 1rem;
             border-radius: 5px;
             cursor: pointer;
             color: #000;
+            font-weight: bold;
             margin-top: 1rem;
+            box-shadow: 0 0 10px #d500f9;
         }
-        #settings-content button:hover { background: #00cc66; }
+        #settings-content button:hover { background: #b000d5; }
     </style>
 </head>
 <body class="neon">
@@ -413,6 +476,18 @@ unset($genre);
         </div>
     </div>
     <script>
+        // Generate purple particles
+        function createStars() {
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = `${Math.random() * 100}vw`;
+                star.style.top = `${Math.random() * 100}vh`;
+                star.style.animationDelay = `${Math.random() * 5}s`;
+                document.body.appendChild(star);
+            }
+        }
+
         const body = document.body;
         const main = document.querySelector('main');
         const sidebar = document.getElementById('sidebar');
@@ -437,6 +512,8 @@ unset($genre);
             body.className = theme;
             if (theme === 'custom' && customWallpaper) {
                 body.style.backgroundImage = `url(${customWallpaper})`;
+            } else {
+                body.style.backgroundImage = '';
             }
             body.style.fontSize = selectedFontSize === 'small' ? '0.9rem' : selectedFontSize === 'large' ? '1.1rem' : '1rem';
             sidebar.className = `sidebar ${selectedSidebarWidth}`;
@@ -579,7 +656,8 @@ unset($genre);
             }
         }
 
-        // Initialize UI immediately
+        // Initialize UI and particles immediately
+        createStars();
         applySettings();
         setupEventListeners();
     </script>
