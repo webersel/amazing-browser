@@ -191,24 +191,27 @@ unset($genre);
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            transition: all 1s ease;
+            transition: opacity 1s ease;
         }
-        #logo-container.hidden { opacity: 0; pointer-events: none; }
+        #logo-container.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
         #logo {
             width: 200px;
             height: 200px;
-            filter: drop-shadow(0 0 20px #0ff);
+            filter: drop-shadow(0 0 20px #00f) drop-shadow(0 0 10px #00f);
             animation: glow 2s infinite alternate;
         }
         @keyframes glow {
-            from { filter: drop-shadow(0 0 20px #0ff); }
-            to { filter: drop-shadow(0 0 40px #0ff); }
+            from { filter: drop-shadow(0 0 20px #00f) drop-shadow(0 0 10px #00f); }
+            to { filter: drop-shadow(0 0 40px #00f) drop-shadow(0 0 20px #00f); }
         }
         .star {
             position: absolute;
             width: 5px;
             height: 5px;
-            background: #0ff;
+            background: #fff;
             border-radius: 50%;
             animation: float 5s infinite;
         }
@@ -225,6 +228,7 @@ unset($genre);
             cursor: pointer;
             z-index: 999;
             display: none;
+            transition: all 0.5s ease;
         }
         #logo-header.visible { display: block; }
         /* Layout */
@@ -258,6 +262,12 @@ unset($genre);
             height: 100vh;
             overflow-y: auto;
             transition: margin-left 0.3s;
+            opacity: 0;
+            pointer-events: none;
+        }
+        main.visible {
+            opacity: 1;
+            pointer-events: auto;
         }
         main.wide { margin-left: 100px; }
         main.narrow { margin-left: 40px; }
@@ -339,7 +349,7 @@ unset($genre);
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.8);
-            z-index: 1000;
+            z-index: 1001;
             justify-content: center;
             align-items: center;
         }
@@ -384,9 +394,9 @@ unset($genre);
 </head>
 <body class="neon">
     <div id="logo-container">
-        <img id="logo" src="/logo.png" alt="Stellar Logo">
+        <img id="logo" src="/logo.png" alt="Stellar Logo" onerror="this.src='https://via.placeholder.com/200?text=Stellar+Logo'; console.log('Logo failed, using placeholder');">
     </div>
-    <img id="logo-header" src="/logo.png" alt="Stellar Logo">
+    <img id="logo-header" src="/logo.png" alt="Stellar Logo" onerror="this.src='https://via.placeholder.com/50?text=Stellar'; console.log('Header logo failed, using placeholder');">
     <div id="sidebar">
         <nav>
             <a href="?page=home" class="<?= $page === 'home' ? 'active' : '' ?>"><i class="fas fa-home"></i> Home</a>
@@ -474,33 +484,62 @@ unset($genre);
         const logo = document.getElementById('logo');
         const logoHeader = document.getElementById('logo-header');
         const body = document.body;
+        const main = document.querySelector('main');
         let logoAnimationEnabled = localStorage.getItem('logoAnimation') !== 'false';
 
         function startLogoAnimation() {
-            if (!logoAnimationEnabled) {
-                logoContainer.classList.add('hidden');
-                logoHeader.classList.add('visible');
-                return;
-            }
-            // Add floating stars
-            for (let i = 0; i < 20; i++) {
-                const star = document.createElement('div');
-                star.className = 'star';
-                star.style.left = `${Math.random() * 100}%`;
-                star.style.animationDelay = `${Math.random() * 5}s`;
-                logoContainer.appendChild(star);
-            }
-            setTimeout(() => {
-                logo.style.transform = 'translateX(-50vw)';
-                setTimeout(() => {
+            return new Promise((resolve) => {
+                if (!logoAnimationEnabled || !logo) {
+                    console.log('Logo animation disabled or logo not found, skipping');
                     logoContainer.classList.add('hidden');
                     logoHeader.classList.add('visible');
-                    logoHeader.style.transition = 'all 1s ease';
-                    logoHeader.style.width = '50px';
-                    logoHeader.style.height = '50px';
-                }, 1000);
-            }, 2000);
+                    resolve();
+                    return;
+                }
+                // Add floating stars
+                for (let i = 0; i < 20; i++) {
+                    const star = document.createElement('div');
+                    star.className = 'star';
+                    star.style.left = `${Math.random() * 100}%`;
+                    star.style.animationDelay = `${Math.random() * 5}s`;
+                    logoContainer.appendChild(star);
+                }
+                console.log('Starting logo animation');
+                setTimeout(() => {
+                    logoContainer.style.transform = 'translateX(-50vw)';
+                    setTimeout(() => {
+                        logoContainer.classList.add('hidden');
+                        logoHeader.classList.add('visible');
+                        logoHeader.style.width = '50px';
+                        logoHeader.style.height = '50px';
+                        logoHeader.style.position = 'fixed';
+                        logoHeader.style.top = '10px';
+                        logoHeader.style.left = '10px';
+                        console.log('Logo animation completed');
+                        resolve();
+                    }, 1000); // Match the transition duration
+                }, 2000); // Initial display time
+            });
         }
+
+        // UI initialization after animation
+        function initializeUI() {
+            console.log('Initializing UI');
+            main.classList.add('visible');
+            applySettings();
+            setupEventListeners();
+        }
+
+        // Start animation on load and proceed to UI
+        window.addEventListener('load', () => {
+            console.log('Window loaded');
+            startLogoAnimation().then(() => {
+                initializeUI();
+            }).catch(err => {
+                console.error('Animation failed, loading UI directly:', err);
+                initializeUI();
+            });
+        });
 
         logoHeader.addEventListener('click', () => {
             window.location.href = '?page=home';
@@ -518,17 +557,7 @@ unset($genre);
         const logoAnimation = document.getElementById('logo-animation');
         const resetSettings = document.getElementById('reset-settings');
         const sidebar = document.getElementById('sidebar');
-        const main = document.querySelector('main');
         const gameGrid = document.getElementById('game-grid');
-
-        settingsBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            settingsModal.classList.add('show');
-        });
-
-        closeSettings.addEventListener('click', () => {
-            settingsModal.classList.remove('show');
-        });
 
         function applySettings() {
             const theme = localStorage.getItem('theme') || 'neon';
@@ -543,9 +572,9 @@ unset($genre);
                 body.style.backgroundImage = `url(${customWallpaper})`;
             }
             body.style.fontSize = selectedFontSize === 'small' ? '0.9rem' : selectedFontSize === 'large' ? '1.1rem' : '1rem';
-            sidebar.className = selectedSidebarWidth;
-            main.className = selectedSidebarWidth;
-            gameGrid.className = selectedGridSize;
+            sidebar.className = `sidebar ${selectedSidebarWidth}`;
+            main.className = `main ${selectedSidebarWidth} ${main.classList.contains('visible') ? 'visible' : ''}`;
+            gameGrid.className = `game-grid ${selectedGridSize}`;
             themeSelect.value = theme;
             fontSize.value = selectedFontSize;
             sidebarWidth.value = selectedSidebarWidth;
@@ -553,134 +582,141 @@ unset($genre);
             logoAnimation.checked = logoAnimationEnabled;
         }
 
-        themeSelect.addEventListener('change', () => {
-            const value = themeSelect.value;
-            localStorage.setItem('theme', value);
-            if (value === 'custom') {
-                wallpaperUpload.style.display = 'block';
-                wallpaperUpload.click();
-            } else {
-                wallpaperUpload.style.display = 'none';
-                body.style.backgroundImage = '';
-                localStorage.removeItem('customWallpaper');
-                applySettings();
-            }
-        });
+        function setupEventListeners() {
+            settingsBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                settingsModal.classList.add('show');
+            });
 
-        wallpaperUpload.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const dataUrl = event.target.result;
-                    localStorage.setItem('customWallpaper', dataUrl);
+            closeSettings.addEventListener('click', () => {
+                settingsModal.classList.remove('show');
+            });
+
+            themeSelect.addEventListener('change', () => {
+                const value = themeSelect.value;
+                localStorage.setItem('theme', value);
+                if (value === 'custom') {
+                    wallpaperUpload.style.display = 'block';
+                    wallpaperUpload.click();
+                } else {
+                    wallpaperUpload.style.display = 'none';
+                    body.style.backgroundImage = '';
+                    localStorage.removeItem('customWallpaper');
                     applySettings();
+                }
+            });
+
+            wallpaperUpload.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const dataUrl = event.target.result;
+                        localStorage.setItem('customWallpaper', dataUrl);
+                        applySettings();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            fontSize.addEventListener('change', () => {
+                localStorage.setItem('fontSize', fontSize.value);
+                applySettings();
+            });
+
+            sidebarWidth.addEventListener('change', () => {
+                localStorage.setItem('sidebarWidth', sidebarWidth.value);
+                applySettings();
+            });
+
+            gridSize.addEventListener('change', () => {
+                localStorage.setItem('gridSize', gridSize.value);
+                applySettings();
+            });
+
+            logoAnimation.addEventListener('change', () => {
+                localStorage.setItem('logoAnimation', logoAnimation.checked);
+                logoAnimationEnabled = logoAnimation.checked;
+            });
+
+            resetSettings.addEventListener('click', () => {
+                localStorage.clear();
+                applySettings();
+            });
+
+            // Browser and games
+            const addressInput = document.getElementById('address-input');
+            const goBtn = document.getElementById('go-btn');
+            const iframeContainer = document.getElementById('iframe-container');
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const genreButtons = document.querySelectorAll('.genre-btn');
+            const games = <?php echo json_encode($genres); ?>;
+
+            function loadUrl(url) {
+                loading.style.display = 'block';
+                error.style.display = 'none';
+                const proxyUrl = '?proxy=' + encodeURIComponent(url);
+                const iframe = document.createElement('iframe');
+                iframe.src = proxyUrl;
+                iframe.onload = () => loading.style.display = 'none';
+                iframe.onerror = () => {
+                    loading.style.display = 'none';
+                    error.style.display = 'block';
+                    error.textContent = 'Failed to load.';
                 };
-                reader.readAsDataURL(file);
+                iframeContainer.innerHTML = '';
+                iframeContainer.appendChild(iframe);
             }
-        });
 
-        fontSize.addEventListener('change', () => {
-            localStorage.setItem('fontSize', fontSize.value);
-            applySettings();
-        });
+            goBtn?.addEventListener('click', () => {
+                let val = addressInput.value.trim();
+                if (!val) {
+                    error.style.display = 'block';
+                    error.textContent = 'Enter a URL or search.';
+                    return;
+                }
+                let url = val.match(/^https?:\/\//) ? val : 'https://' + val;
+                if (!val.match(/^(https?:\/\/)?[\w.-]+\.[a-z]{2,}/i)) {
+                    url = `https://www.google.com/search?q=${encodeURIComponent(val)}`;
+                }
+                loadUrl(url);
+            });
 
-        sidebarWidth.addEventListener('change', () => {
-            localStorage.setItem('sidebarWidth', sidebarWidth.value);
-            applySettings();
-        });
+            addressInput?.addEventListener('keypress', e => {
+                if (e.key === 'Enter') goBtn.click();
+            });
 
-        gridSize.addEventListener('change', () => {
-            localStorage.setItem('gridSize', gridSize.value);
-            applySettings();
-        });
-
-        logoAnimation.addEventListener('change', () => {
-            localStorage.setItem('logoAnimation', logoAnimation.checked);
-            logoAnimationEnabled = logoAnimation.checked;
-        });
-
-        resetSettings.addEventListener('click', () => {
-            localStorage.clear();
-            applySettings();
-        });
-
-        // Browser and games
-        const addressInput = document.getElementById('address-input');
-        const goBtn = document.getElementById('go-btn');
-        const iframeContainer = document.getElementById('iframe-container');
-        const loading = document.getElementById('loading');
-        const error = document.getElementById('error');
-        const genreButtons = document.querySelectorAll('.genre-btn');
-        const games = <?php echo json_encode($genres); ?>;
-
-        function loadUrl(url) {
-            loading.style.display = 'block';
-            error.style.display = 'none';
-            const proxyUrl = '?proxy=' + encodeURIComponent(url);
-            const iframe = document.createElement('iframe');
-            iframe.src = proxyUrl;
-            iframe.onload = () => loading.style.display = 'none';
-            iframe.onerror = () => {
-                loading.style.display = 'none';
-                error.style.display = 'block';
-                error.textContent = 'Failed to load.';
-            };
-            iframeContainer.innerHTML = '';
-            iframeContainer.appendChild(iframe);
-        }
-
-        goBtn?.addEventListener('click', () => {
-            let val = addressInput.value.trim();
-            if (!val) {
-                error.style.display = 'block';
-                error.textContent = 'Enter a URL or search.';
-                return;
-            }
-            let url = val.match(/^https?:\/\//) ? val : 'https://' + val;
-            if (!val.match(/^(https?:\/\/)?[\w.-]+\.[a-z]{2,}/i)) {
-                url = `https://www.google.com/search?q=${encodeURIComponent(val)}`;
-            }
-            loadUrl(url);
-        });
-
-        addressInput?.addEventListener('keypress', e => {
-            if (e.key === 'Enter') goBtn.click();
-        });
-
-        function displayGames(genre) {
-            gameGrid.innerHTML = '';
-            games[genre].forEach(game => {
-                const card = document.createElement('div');
-                card.className = `game-card ${localStorage.getItem('gridSize') || 'medium'}`;
-                card.dataset.url = game.url;
-                card.innerHTML = `
-                    <img src="${game.thumb}" alt="${game.title}">
-                    <div>${game.title}</div>
-                `;
-                card.addEventListener('click', () => {
-                    window.location.href = '?page=browser&proxy=' + encodeURIComponent(game.url);
+            function displayGames(genre) {
+                gameGrid.innerHTML = '';
+                games[genre].forEach(game => {
+                    const card = document.createElement('div');
+                    card.className = `game-card ${localStorage.getItem('gridSize') || 'medium'}`;
+                    card.dataset.url = game.url;
+                    card.innerHTML = `
+                        <img src="${game.thumb}" alt="${game.title}">
+                        <div>${game.title}</div>
+                    `;
+                    card.addEventListener('click', () => {
+                        window.location.href = '?page=browser&proxy=' + encodeURIComponent(game.url);
+                    });
+                    gameGrid.appendChild(card);
                 });
-                gameGrid.appendChild(card);
+            }
+
+            genreButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    genreButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    displayGames(btn.dataset.genre);
+                });
             });
+
+            if (genreButtons.length > 0) {
+                genreButtons[0].classList.add('active');
+                displayGames(genreButtons[0].dataset.genre);
+            }
         }
-
-        genreButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                genreButtons.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                displayGames(btn.dataset.genre);
-            });
-        });
-
-        if (genreButtons.length > 0) {
-            genreButtons[0].classList.add('active');
-            displayGames(genreButtons[0].dataset.genre);
-        }
-
-        // Initialize
-        applySettings();
-        startLogoAnimation();
     </script>
 </body>
 </html>
