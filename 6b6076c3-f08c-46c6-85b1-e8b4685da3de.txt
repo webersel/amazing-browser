@@ -1,0 +1,2 @@
+proxy_errors.log
+node_modules/

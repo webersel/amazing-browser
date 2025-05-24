@@ -1,0 +1,7 @@
+project: amazing-browser
+node:
+  version: 16
+  main: ws-proxy.js
+php:
+  version: 8.1
+  document_root: .

@@ -1,0 +1,10 @@
+{
+  "name": "amazing-browser",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node ws-proxy.js"
+  },
+  "dependencies": {
+    "ws": "^8.13.0"
+  }
+}
